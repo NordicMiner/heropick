@@ -79,3 +79,12 @@ export function classifyShot(faces: Face[], person: MainPerson | null): ShotType
   if (largest.box.h < 0.08) return 'wide'; // people small in a big scene: a stage or the room
   return 'other';
 }
+
+/** Each photo's main face (largest), used to spot the same person in the same pose. */
+export function subjectDescriptors(photos: PhotoMetrics[]): Map<string, Float32Array> {
+  const out = new Map<string, Float32Array>();
+  for (const p of photos) {
+    if (p.faces.length) out.set(p.id, p.faces.reduce((a, b) => (b.box.h > a.box.h ? b : a)).descriptor);
+  }
+  return out;
+}

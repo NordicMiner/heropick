@@ -1,6 +1,6 @@
 import { groupBursts } from '../core/bursts';
 import { pickHeroes } from '../core/heroes';
-import { findMainPerson } from '../core/people';
+import { findMainPerson, subjectDescriptors } from '../core/people';
 import { PROFILES, type Profile } from '../core/profiles';
 import { scoreShoot } from '../core/score';
 import type { Flag, PhotoMetrics, ProfileId, Scored, ShotType } from '../core/types';
@@ -19,7 +19,7 @@ export function evaluateShoot(photos: PhotoMetrics[], profileId: ProfileId, pick
   const bursts = groupBursts(photos);
   const person = findMainPerson(photos);
   const scored = scoreShoot(photos, bursts, person, profile);
-  const heroIds = pickHeroes(scored, profile, n, new Map(photos.map((p) => [p.id, p.hash])));
+  const heroIds = pickHeroes(scored, profile, n, new Map(photos.map((p) => [p.id, p.hash])), subjectDescriptors(photos));
   const byName = new Map(photos.map((p) => [p.name, p]));
   const byId = new Map(photos.map((p) => [p.id, p]));
   const scoredById = new Map(scored.map((s) => [s.id, s]));

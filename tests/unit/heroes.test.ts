@@ -1,7 +1,8 @@
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { PROFILES } from '../../src/core/profiles';
 import { pickHeroes, swapCandidates } from '../../src/core/heroes';
 import type { Flag, Scored, ShotType } from '../../src/core/types';
+import { unitVec } from '../helpers/faces';
 
 const s = (id: string, score: number, shot: ShotType, burstId: number, flags: Flag[] = []): Scored => ({ id, score, shot, burstId, flags });
 
@@ -110,4 +111,33 @@ test('look-alikes are still used when nothing else is left', () => {
   const all: Scored[] = Array.from({ length: 4 }, (_, i) => s(`p${i}`, 90 - i, 'close', i));
   const hashes = new Map(all.map((x) => [x.id, '0000000000000000']));
   expect(pickHeroes(all, PROFILES.government, 4, hashes)).toHaveLength(4);
+});
+
+describe('same person, same pose', () => {
+  const kidA = unitVec(501), kidB = unitVec(502);
+  // p0 and p1: same kid, same pose, framing differs a little (20 bits apart: above the plain look-alike limit).
+  const base = (): Scored[] => Array.from({ length: 8 }, (_, i) => s(`p${i}`, 90 - i, 'close', i));
+  const hashes = new Map<string, string>([
+    ['p0', '0000000000000000'], ['p1', '00000000000fffff'],
+    ...Array.from({ length: 6 }, (_, i) => [`p${i + 2}`, ((i + 3) * 0x1357).toString(16).padStart(4, 'a').repeat(4)] as [string, string]),
+  ]);
+  const others = Array.from({ length: 6 }, (_, i) => [`p${i + 2}`, unitVec(600 + i)] as [string, Float32Array]);
+
+  test('the same kid in the same pose is picked once', () => {
+    const subjects = new Map<string, Float32Array>([['p0', kidA], ['p1', kidA], ...others]);
+    const h = pickHeroes(base(), PROFILES.soccer, 6, hashes, subjects);
+    expect(h).toContain('p0');
+    expect(h).not.toContain('p1');
+  });
+
+  test('two different kids in the same pose are both allowed', () => {
+    const subjects = new Map<string, Float32Array>([['p0', kidA], ['p1', kidB], ...others]);
+    expect(pickHeroes(base(), PROFILES.soccer, 6, hashes, subjects)).toContain('p1');
+  });
+
+  test('the same person in a different scene is allowed (e.g. the Premier, a wedding couple)', () => {
+    const far = new Map(hashes); far.set('p1', 'ffffffffff000000'); // 40 bits: a different scene
+    const subjects = new Map<string, Float32Array>([['p0', kidA], ['p1', kidA], ...others]);
+    expect(pickHeroes(base(), PROFILES.soccer, 6, far, subjects)).toContain('p1');
+  });
 });

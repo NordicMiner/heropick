@@ -1,7 +1,7 @@
 import { groupBursts } from './bursts';
 import { clampN, pickHeroes } from './heroes';
 import { loadPhoto, photoId, UnreadablePhotoError } from './load';
-import { findMainPerson } from './people';
+import { findMainPerson, subjectDescriptors } from './people';
 import { dHash, exposureStats, sharpness, toGray } from './pixels';
 import { PROFILES } from './profiles';
 import { scoreShoot } from './score';
@@ -105,5 +105,5 @@ export function rescore(result: ShootResult, person: MainPerson | null, n: numbe
   const bursts = groupBursts(result.photos);
   const scored = scoreShoot(result.photos, bursts, person, profile);
   const hashes = new Map(result.photos.map((p) => [p.id, p.hash]));
-  return { ...result, person, n: clampN(n), scored, heroIds: pickHeroes(scored, profile, n, hashes) };
+  return { ...result, person, n: clampN(n), scored, heroIds: pickHeroes(scored, profile, n, hashes, subjectDescriptors(result.photos)) };
 }

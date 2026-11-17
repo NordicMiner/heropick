@@ -1,3 +1,4 @@
+import { faceDistance } from './people';
 import { hamming } from './pixels';
 import type { Profile } from './profiles';
 import type { Scored, ShotType } from './types';
@@ -8,12 +9,20 @@ export const clampN = (n: number) => Math.min(10, Math.max(4, Math.round(n)));
 
 /** Photos this close in look (visual hash) count as the same shot, e.g. one podium angle seconds apart. */
 export const LOOKALIKE = 12;
+/** The same person in the same kind of shot counts as the same shot up to this looser look distance (e.g. a re-framed portrait). */
+export const SAME_PERSON_LOOKALIKE = 24;
+const SAME_FACE = 0.45;
 
 /**
  * A varied hero set: best of each burst, shot-type mix from the profile, unflagged first,
  * and no two photos that look almost the same (when hashes are given) unless nothing else is left. Ids best-first.
  */
-export function pickHeroes(scored: Scored[], profile: Profile, n: number, hashes?: Map<string, string>): string[] {
+export function pickHeroes(
+  scored: Scored[], profile: Profile, n: number,
+  hashes?: Map<string, string>,
+  /** The face each photo is about (its largest face), to catch the same person in the same pose. */
+  subjects?: Map<string, Float32Array>,
+): string[] {
   const size = clampN(n);
   const bestOfBurst = new Map<number, Scored>();
   for (const s of scored) {
@@ -28,7 +37,16 @@ export function pickHeroes(scored: Scored[], profile: Profile, n: number, hashes
   const picked: Scored[] = [];
   const looksLikePicked = (s: Scored) => {
     const h = hashes?.get(s.id);
-    return !!h && picked.some((p) => { const ph = hashes!.get(p.id); return !!ph && hamming(h, ph) <= LOOKALIKE; });
+    if (!h) return false;
+    const face = subjects?.get(s.id);
+    return picked.some((p) => {
+      const ph = hashes!.get(p.id);
+      if (!ph) return false;
+      const d = hamming(h, ph);
+      if (d <= LOOKALIKE) return true;
+      const pf = subjects?.get(p.id);
+      return !!face && !!pf && p.shot === s.shot && d <= SAME_PERSON_LOOKALIKE && faceDistance(face, pf) <= SAME_FACE;
+    });
   };
   const take = (pool: Scored[], count: number, shot?: ShotType, allowLookalike = false) => {
     for (const s of pool) {
