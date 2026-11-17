@@ -187,11 +187,13 @@ export function EditPanel(p: { s: Session; mem: Map<string, File>; slot: number 
   const [edit, setEdit] = useState<Edit>(() => ({ ...(id ? editFor(p.s, id) : NO_EDIT) }));
   const [luts, setLuts] = useState<string[]>(Object.keys(BUILT_IN));
   useEffect(() => { listLuts().then(setLuts).catch(() => {}); }, []);
-  const blob = id ? p.s.result.thumbs.get(id) : undefined;
+  // Preview from the original (sharp), falling back to the thumbnail.
+  const blob = id ? originalOf(p.s, p.mem, id) ?? p.s.result.thumbs.get(id) : undefined;
+  const screenEdge = Math.round(Math.min(1600, window.innerWidth * (window.devicePixelRatio || 1)));
   const set = (k: keyof Edit, v: number | string | null) => setEdit((e) => ({ ...e, [k]: v }));
   return (
     <div class="stack viewer">
-      {blob ? <EditedImage blob={blob} edit={edit} maxEdge={640} /> : null}
+      {blob ? <EditedImage blob={blob} edit={edit} maxEdge={screenEdge} /> : null}
       <label class="slider">{COPY.edit.brightness}
         <input type="range" min={-1} max={1} step={0.05} value={edit.brightness} onInput={(e) => set('brightness', Number((e.currentTarget as HTMLInputElement).value))} />
       </label>

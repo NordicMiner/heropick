@@ -19,7 +19,7 @@ export interface LoadedPhoto {
   analysis: ImageData;
   /** ≤ maxEdge decode for the face model. Caller must close(). */
   bitmap: ImageBitmap;
-  /** 320 px long-edge JPEG. */
+  /** 640 px long-edge JPEG (sharp tiles on a phone). */
   thumb: Blob;
 }
 
@@ -74,7 +74,7 @@ export async function loadPhoto(file: File, order: number, maxEdge = 1024): Prom
     const height = full.height;
     const a = fit(width, height, maxEdge);
     const analysisCanvas = drawScaled(full, a.w, a.h);
-    const t = fit(width, height, 320);
+    const t = fit(width, height, 640);
     const thumbCanvas = drawScaled(full, t.w, t.h);
     const analysis = analysisCanvas.getContext('2d', { willReadFrequently: true })!.getImageData(0, 0, a.w, a.h);
     const [bitmap, thumb, exifTime] = await Promise.all([

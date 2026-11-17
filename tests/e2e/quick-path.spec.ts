@@ -142,3 +142,16 @@ test('quick taps then an immediate reload bring back tiles, looks and every swap
   await expect(page.getByTestId('hero-tile').first()).toHaveAttribute('data-look', 'Warm');
   expect(await strips()).toEqual(before);
 });
+
+test('tiles show the whole photo (tall portraits are not cropped) and the edit preview is sharp', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Quick pick' }).click();
+  await page.getByRole('button', { name: 'Government' }).click();
+  await page.locator('input[type=file]').setInputFiles(await makePhotos(page, 8));
+  await expect(page.getByRole('heading', { name: 'Your best 6' })).toBeVisible({ timeout: 30_000 });
+  const fit = await page.getByTestId('hero-tile').first().locator('canvas').evaluate((c) => getComputedStyle(c).objectFit);
+  expect(fit).toBe('contain');
+  await page.getByRole('button', { name: 'Edit' }).click();
+  // Edit preview is drawn from the original (600 px here), not the 320 px thumbnail.
+  await expect.poll(() => page.locator('.viewer canvas').first().evaluate((c: HTMLCanvasElement) => c.width)).toBeGreaterThan(320);
+});

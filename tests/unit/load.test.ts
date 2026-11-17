@@ -21,13 +21,12 @@ test('falls back to lastModified when no EXIF', async () => {
   p.bitmap.close();
 });
 
-test('thumb is a JPEG no bigger than 320px', async () => {
+test('thumb is a 640px JPEG (sharp on an iPhone screen)', async () => {
   const f = await makeJpeg({ w: 2000, h: 1500 });
   const p = await loadPhoto(f, 0);
   expect(p.thumb.type).toBe('image/jpeg');
   const b = await createImageBitmap(p.thumb);
-  expect(Math.max(b.width, b.height)).toBeLessThanOrEqual(320);
-  expect(Math.max(b.width, b.height)).toBeGreaterThanOrEqual(319);
+  expect(Math.max(b.width, b.height)).toBe(640);
   p.bitmap.close();
 });
 
