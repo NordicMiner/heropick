@@ -1,0 +1,14 @@
+node_modules/
+dist/
+samples/
+*.jpg
+*.JPG
+*.jpeg
+*.CR3
+*.cr3
+!tests/fixtures/generated/**
+test-results/
+playwright-report/
+.superpowers/
+public/models/
+.vitest/
